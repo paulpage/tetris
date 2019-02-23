@@ -2,12 +2,75 @@ var grid;
 var piece;
 var lost = false;
 var frame = 0;
+var score = 0;
+var level = 0;
+var gravity = 48;
+var downPressed = false;
+var downLock = false;
+var downScore = 0;
+var totalLinesCleared = 0;
+var nextPiece;
+var nextCanvas;
+
+var scoreDom;
+var levelDom;
+var linesDom;
+
+class Canvas {
+    constructor(id, width, height) {
+        this.externalCanvas = document.getElementById(id);
+        this.externalContext = this.externalCanvas.getContext('2d');
+        this.externalCanvas.width = width;
+        this.externalCanvas.height = height;
+        this.canvas = document.createElement('canvas');
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.context = this.canvas.getContext('2d');
+
+        this.width = width;
+        this.height = height;
+    }
+
+    getCanvas() {
+        return this.canvas;
+    }
+
+    getContext() {
+        return this.context;
+    }
+
+    draw() {
+        this.externalContext.drawImage(this.canvas, 0, 0);
+    }
+
+    setSize(width, height) {
+        this.width = width;
+        this.height = height;
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.externalCanvas.width = width;
+        this.externalCanvas.height = height;
+    }
+}
+
+var GameState = Object.freeze({
+    menu: 0,
+    playing: 1
+});
+
+var gameState = GameState.menu;
 
 var PieceResult = Object.freeze({
     free: 0,
     placed: 1,
     overflowed: 2
 });
+
+var gravities = [
+    48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 
+    5,  5,  5,  4,  4,  4,  3,  3,  3, 2,
+    2,  2,  2,  2,  2,  2,  2,  2,  2, 1
+]
 
 class Board {
     constructor(width, height) {
@@ -50,6 +113,17 @@ class Board {
     }
 }
 
+function updateScore(value) {
+    scoreDom.innerHTML = value;
+}
+
+function updateLevel(value) {
+    levelDom.innerHTML = value;
+}
+
+function updateLines(value) {
+    linesDom.innerHTML = value;
+}
 
 var shapes = [
     [
@@ -77,133 +151,133 @@ var shapes = [
     ], [
         [
             [0,0,0,0],
-            [0,1,1,0],
-            [0,1,1,0],
+            [0,2,2,0],
+            [0,2,2,0],
             [0,0,0,0]
         ], [
             [0,0,0,0],
-            [0,1,1,0],
-            [0,1,1,0],
+            [0,2,2,0],
+            [0,2,2,0],
             [0,0,0,0]
         ], [
             [0,0,0,0],
-            [0,1,1,0],
-            [0,1,1,0],
+            [0,2,2,0],
+            [0,2,2,0],
             [0,0,0,0]
         ], [
             [0,0,0,0],
-            [0,1,1,0],
-            [0,1,1,0],
+            [0,2,2,0],
+            [0,2,2,0],
             [0,0,0,0]
         ]
     ], [
         [
             [0,0,0,0],
-            [1,1,1,0],
-            [0,0,1,0],
+            [3,3,3,0],
+            [0,0,3,0],
             [0,0,0,0]
         ], [
-            [0,1,0,0],
-            [0,1,0,0],
-            [1,1,0,0],
+            [0,3,0,0],
+            [0,3,0,0],
+            [3,3,0,0],
             [0,0,0,0]
         ], [
-            [1,0,0,0],
-            [1,1,1,0],
+            [3,0,0,0],
+            [3,3,3,0],
             [0,0,0,0],
             [0,0,0,0]
         ], [
-            [0,1,1,0],
-            [0,1,0,0],
-            [0,1,0,0],
+            [0,3,3,0],
+            [0,3,0,0],
+            [0,3,0,0],
             [0,0,0,0]
         ]
     ], [
         [
             [0,0,0,0],
-            [1,1,1,0],
-            [1,0,0,0],
+            [4,4,4,0],
+            [4,0,0,0],
             [0,0,0,0]
         ], [
-            [1,1,0,0],
-            [0,1,0,0],
-            [0,1,0,0],
+            [4,4,0,0],
+            [0,4,0,0],
+            [0,4,0,0],
             [0,0,0,0]
         ], [
-            [0,0,1,0],
-            [1,1,1,0],
+            [0,0,4,0],
+            [4,4,4,0],
             [0,0,0,0],
             [0,0,0,0]
         ], [
-            [0,1,0,0],
-            [0,1,0,0],
-            [0,1,1,0],
+            [0,4,0,0],
+            [0,4,0,0],
+            [0,4,4,0],
             [0,0,0,0]
         ]
     ], [
         [
             [0,0,0,0],
-            [0,1,1,0],
-            [1,1,0,0],
+            [0,5,5,0],
+            [5,5,0,0],
             [0,0,0,0]
         ], [
-            [0,1,0,0],
-            [0,1,1,0],
-            [0,0,1,0],
+            [0,5,0,0],
+            [0,5,5,0],
+            [0,0,5,0],
             [0,0,0,0]
         ], [
             [0,0,0,0],
-            [0,1,1,0],
-            [1,1,0,0],
+            [0,5,5,0],
+            [5,5,0,0],
             [0,0,0,0]
         ], [
-            [0,1,0,0],
-            [0,1,1,0],
-            [0,0,1,0],
+            [0,5,0,0],
+            [0,5,5,0],
+            [0,0,5,0],
             [0,0,0,0]
         ]
     ], [
         [
             [0,0,0,0],
-            [1,1,1,0],
-            [0,1,0,0],
+            [6,6,6,0],
+            [0,6,0,0],
             [0,0,0,0]
         ], [
-            [0,1,0,0],
-            [1,1,0,0],
-            [0,1,0,0],
+            [0,6,0,0],
+            [6,6,0,0],
+            [0,6,0,0],
             [0,0,0,0]
         ], [
-            [0,1,0,0],
-            [1,1,1,0],
+            [0,6,0,0],
+            [6,6,6,0],
             [0,0,0,0],
             [0,0,0,0]
         ], [
-            [0,1,0,0],
-            [0,1,1,0],
-            [0,1,0,0],
+            [0,6,0,0],
+            [0,6,6,0],
+            [0,6,0,0],
             [0,0,0,0]
         ]
     ], [
         [
             [0,0,0,0],
-            [1,1,0,0],
-            [0,1,1,0],
+            [7,7,0,0],
+            [0,7,7,0],
             [0,0,0,0]
         ], [
-            [0,0,1,0],
-            [0,1,1,0],
-            [0,1,0,0],
+            [0,0,7,0],
+            [0,7,7,0],
+            [0,7,0,0],
             [0,0,0,0]
         ], [
             [0,0,0,0],
-            [1,1,0,0],
-            [0,1,1,0],
+            [7,7,0,0],
+            [0,7,7,0],
             [0,0,0,0]
         ], [
-            [0,0,1,0],
-            [0,1,1,0],
-            [0,1,0,0],
+            [0,0,7,0],
+            [0,7,7,0],
+            [0,7,0,0],
             [0,0,0,0]
         ]
     ]
@@ -211,60 +285,149 @@ var shapes = [
 
 window.onload = function() {
 
-    // grid = newGrid(10, 20)
-    grid = new Board(10, 20);
-
+    scoreDom = document.getElementById('score');
+    levelDom = document.getElementById('level');
+    linesDom = document.getElementById('lines');
     canvas.init();
     canvas.setSize(200, 400);
+
+    nextCanvas = new Canvas('next', 80, 80);
 
     canvas.ctx.fillStyle = 'black';
     canvas.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    window.addEventListener('keydown', handleKeyboard);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    canvas.c.addEventListener('mousedown', handleClick);
 
-    piece = new Piece(3, 0, shapes[0]);
+    newGame();
+    updateScore(score);
+    updateLevel(level);
+    updateLines(totalLinesCleared);
 
     window.requestAnimationFrame(update)
 }
-function update() {
-    canvas.draw();
 
-    drawGrid(canvas.ctx);
-    drawPiece(canvas.ctx, grid, piece);
-
-    frame = (frame + 1) % 10;
-    if (frame === 0) {
-        var linesCleared = 0;
-        var state = piece.update(grid);
-        switch (state) {
-            case PieceResult.free:
-                break;
-            case PieceResult.placed:
-                piece = new Piece(0, 0, shapes[Math.floor(Math.random() * 7)]);
-                break;
-            case PieceResult.overflowed:
-                lost = true;
-                break;
+function drawNext(c, ctx, p) {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = 'red';
+    var cellSize = 20;
+    for (var y = 0; y < p.height; y++) {
+        for (var x = 0; x < p.width; x++) {
+            if (p.shape[p.rotation][y][x] !== 0) {
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
         }
-        var rowsCleared = 0;
-        for (var y = 0; y < grid.height; y++) {
-            var row = grid.getRow(y);
-            var clear = true;
-            for (var x = 0; x < grid.width; x++) {
-                if (row[x] === 0) {
-                    clear = false;
+    }
+    c.draw();
+} 
+
+function handleClick() {
+    console.log('hi');
+    if (gameState === GameState.menu) {
+        newGame();
+        gameState = GameState.playing;
+    }
+}
+
+function newGame() {
+    score = 0;
+    level = 0;
+    totalLinesCleared = 0;
+    grid = new Board(10, 40);
+    piece = randomPiece();
+    nextPiece = randomPiece();
+}
+
+function randomPiece() {
+    return new Piece(5, 18, shapes[Math.floor(Math.random() * 7)]);
+}
+
+function drawMenu(c, ctx) {
+    ctx.fillStyle = 'blue';
+    ctx.font = '20px sans';
+    ctx.fillText('Click anywhere', 30, 30);
+    ctx.fillText('to start', 30, 60);
+}
+
+function update() {
+
+    switch (gameState) {
+        case GameState.menu:
+            drawMenu(canvas, canvas.ctx);
+            break;
+        case GameState.playing:
+            canvas.draw();
+
+            drawGrid(canvas.ctx);
+            drawPiece(canvas.ctx, grid, piece);
+            drawNext(nextCanvas, nextCanvas.getContext(), nextPiece);
+
+            if (downPressed) {
+                if (downScore < 20) {
+                    score++;
+                    downScore++;
+                }
+                updateScore(score);
+                frame = (frame + 1) % 2;
+            } else {
+                frame = (frame + 1) % gravities[Math.min(level, 29)];
+            }
+
+            if (frame === 0) {
+                var linesCleared = 0;
+                var state = piece.update(grid);
+                switch (state) {
+                    case PieceResult.free:
+                        break;
+                    case PieceResult.placed:
+                        piece = nextPiece;
+                        nextPiece = randomPiece();
+                        downPressed = false;
+                        downScore = 0;
+                        break;
+                    case PieceResult.overflowed:
+                        gameState = GameState.menu;
+                        break;
+                }
+                for (var y = 0; y < grid.height; y++) {
+                    var row = grid.getRow(y);
+                    var clear = true;
+                    for (var x = 0; x < grid.width; x++) {
+                        if (row[x] === 0) {
+                            clear = false;
+                        }
+                    }
+                    if (clear) {
+                        grid.clear(y);
+                        linesCleared++;
+                        totalLinesCleared++;
+                        updateLines(totalLinesCleared);
+                        if (totalLinesCleared % 10 === 0) {
+                            level++;
+                            updateLevel(level);
+                        }
+                    }
+                }
+                if (linesCleared > 0) {
+                    switch (linesCleared) {
+                        case 1:
+                            score += 40 * (level + 1);
+                            break;
+                        case 2:
+                            score += 100 * (level + 1);
+                        case 3:
+                            score += 300 * (level + 1);
+                        case 4:
+                            score += 1200 * (level + 1);
+                    }
+                    updateScore(score);
                 }
             }
-            if (clear) {
-                grid.clear(y);
-                rowsCleared++;
-            }
-        }
+            break;
     }
-
-    if (!lost) {
-        window.requestAnimationFrame(update)
-    }
+    window.requestAnimationFrame(update);
 }
 
 function drawPiece(ctx, board, piece) {
@@ -273,13 +436,13 @@ function drawPiece(ctx, board, piece) {
     for (var y = 0; y < piece.height; y++) {
         for (var x = 0; x < piece.width; x++) {
             if (piece.shape[piece.rotation][y][x] !== 0) {
-                ctx.fillRect((piece.x + x) * cellSize, (piece.y + y) * cellSize, cellSize, cellSize);
+                ctx.fillRect((piece.x + x) * cellSize, (piece.y - 20 + y) * cellSize, cellSize, cellSize);
             }
         }
     }
 }
 
-function handleKeyboard(e) {
+function handleKeyDown(e) {
     switch (keyboard.getChar(e)) {
         case 'left':
             piece.moveLeft(grid);
@@ -291,11 +454,25 @@ function handleKeyboard(e) {
             console.log('up');
             break;
         case 'down':
-            console.log('down');
+            if (!downLock) {
+                downPressed = true;
+                downLock = true;
+            }
             break;
         case 'a':
             piece.rotate(grid, 1);
             break;
+        case 's':
+            piece.rotate(grid, -1);
+            break;
+    }
+}
+
+function handleKeyUp(e) {
+    switch (keyboard.getChar(e)) {
+        case 'down':
+            downPressed = false;
+            downLock = false;
     }
 }
 
@@ -350,7 +527,7 @@ class Piece {
         if (this.stuck) {
             return false;
         }
-        this.rotation = (this.rotation + direction) % 4;
+        this.rotation = (this.rotation + direction + 4) % 4;
 
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
@@ -442,7 +619,7 @@ function drawGrid(ctx) {
     ctx.fillStyle = 'red';
     for (var y = 0; y < grid.height; y++) {
         for (var x = 0; x < grid.width; x++) {
-            if (grid.get(x, y) != 0) {
+            if (grid.get(x, y + 20) != 0) {
                 ctx.fillRect(x * ps, y * ps, ps, ps);
             }
         }
