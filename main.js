@@ -16,6 +16,17 @@ var scoreDom;
 var levelDom;
 var linesDom;
 
+var colors = [
+    'black',
+    'cyan',
+    'yellow',
+    'blue',
+    'orange',
+    'green',
+    'purple',
+    'red'
+]
+
 class Canvas {
     constructor(id, width, height) {
         this.externalCanvas = document.getElementById(id);
@@ -293,7 +304,7 @@ window.onload = function() {
 
     nextCanvas = new Canvas('next', 80, 80);
 
-    canvas.ctx.fillStyle = 'black';
+    canvas.ctx.fillStyle = colors[0];
     canvas.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     window.addEventListener('keydown', handleKeyDown);
@@ -309,9 +320,9 @@ window.onload = function() {
 }
 
 function drawNext(c, ctx, p) {
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = colors[0];
     ctx.fillRect(0, 0, c.width, c.height);
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = p.color;
     var cellSize = 20;
     for (var y = 0; y < p.height; y++) {
         for (var x = 0; x < p.width; x++) {
@@ -324,7 +335,6 @@ function drawNext(c, ctx, p) {
 } 
 
 function handleClick() {
-    console.log('hi');
     if (gameState === GameState.menu) {
         newGame();
         gameState = GameState.playing;
@@ -341,7 +351,8 @@ function newGame() {
 }
 
 function randomPiece() {
-    return new Piece(5, 18, shapes[Math.floor(Math.random() * 7)]);
+    var i = Math.floor(Math.random() * 7);
+    return new Piece(5, 18, shapes[i], colors[i + 1]);
 }
 
 function drawMenu(c, ctx) {
@@ -432,7 +443,7 @@ function update() {
 
 function drawPiece(ctx, board, piece) {
     var cellSize = canvas.width / grid.width;
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = piece.color;
     for (var y = 0; y < piece.height; y++) {
         for (var x = 0; x < piece.width; x++) {
             if (piece.shape[piece.rotation][y][x] !== 0) {
@@ -451,7 +462,6 @@ function handleKeyDown(e) {
             piece.moveRight(grid);
             break;
         case 'up':
-            console.log('up');
             break;
         case 'down':
             if (!downLock) {
@@ -477,10 +487,11 @@ function handleKeyUp(e) {
 }
 
 class Piece {
-    constructor(x, y, shape) {
+    constructor(x, y, shape, color) {
         this.x = x;
         this.y = y;
         this.shape = shape;
+        this.color = color;
 
         this.rotation = 0;
         this.stuck = false;
@@ -599,7 +610,7 @@ class Piece {
 }
 
 function drawGrid(ctx) {
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = colors[0];
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     var ps = canvas.width / grid.width;
@@ -616,11 +627,13 @@ function drawGrid(ctx) {
     }
     ctx.stroke();
 
-    ctx.fillStyle = 'red';
-    for (var y = 0; y < grid.height; y++) {
-        for (var x = 0; x < grid.width; x++) {
-            if (grid.get(x, y + 20) != 0) {
-                ctx.fillRect(x * ps, y * ps, ps, ps);
+    for (var i = 1; i < colors.length; i++) {
+        ctx.fillStyle = colors[i];
+        for (var y = 0; y < grid.height - 20; y++) {
+            for (var x = 0; x < grid.width; x++) {
+                if (grid.get(x, y + 20) === i) {
+                    ctx.fillRect(x * ps, y * ps, ps, ps);
+                }
             }
         }
     }
