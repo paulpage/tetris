@@ -425,10 +425,10 @@ function drawPiece(ctx, board, piece) {
 function handleKeyDown(e) {
     switch (keyboard.getChar(e)) {
         case 'left':
-            piece.moveLeft(grid);
+            piece.move(grid, -1);
             break;
         case 'right':
-            piece.moveRight(grid);
+            piece.move(grid, 1);
             break;
         case 'up':
             break;
@@ -468,19 +468,21 @@ class Piece {
         this.height = shape[this.rotation].length;
     }
 
+    blocked(board, x, y) {
+        return (
+            (board.get(this.x + x, this.y + y) !== 0
+                || !board.bounded(this.x + x, this.y + y))
+            && this.shape[this.rotation][y][x] !== 0
+        );
+    }
+
     update(board) {
         if (this.stuck) {
             for (var y = 0; y < this.height; y++) {
                 for (var x = 0; x < this.width; x++) {
-                    if (board.get(this.x + x, this.y + y) !== 0 || !board.bounded(this.x + x, this.y + y)) {
-                        if (this.shape[this.rotation][y][x] !== 0) {
-                            return PieceResult.overflowed;
-                        }
+                    if (this.blocked(board, x, y)) {
+                        return PieceResult.overflowed;
                     }
-                }
-            }
-            for (var y = 0; y < this.height; y++) {
-                for (var x = 0; x < this.width; x++) {
                     board.set(this.x + x, this.y + y, 
                         this.shape[this.rotation][y][x] | board.get(this.x + x, this.y + y));
                 }
@@ -490,12 +492,10 @@ class Piece {
             this.y++;
             for (var x = 0; x < this.width; x++) {
                 for (var y = 0; y < this.height; y++) {
-                    if (board.get(this.x + x, this.y + y) !== 0 || !grid.bounded(this.x + x, this.y + y)) {
-                        if (this.shape[this.rotation][y][x] !== 0) {
-                            this.y--;
-                            this.stuck = true;
-                            return PieceResult.free;
-                        }
+                    if (this.blocked(board, x, y)) {
+                        this.y--;
+                        this.stuck = true;
+                        return PieceResult.free;
                     }
                 }
             }
@@ -511,66 +511,27 @@ class Piece {
 
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
-                if (board.get(this.x + x, this.y + y) !== 0 || !board.bounded(this.x + x, this.y + y)) {
-                    if (this.shape[this.rotation][y][x] !== 0) {
-                        this.rotation = (this.rotation - direction + 4) % 4;
-                        return false;
-                    }
+                if (this.blocked(board, x, y)) {
+                    this.rotation = (this.rotation - direction + 4) % 4;
+                    return false;
                 }
             }
         }
         return true;
     }
 
-    moveLeft(board) {
+    // Move horizontally, 1 for right, -1 for left
+    move(board, direction) {
         if (this.stuck) {
             return false;
         }
         // check if the piece is blocked by other pieces
-        this.x--;
+        this.x += direction;
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
-                if (board.get(this.x + x, this.y + y) !== 0 && this.shape[this.rotation][y][x] !== 0) {
-                    this.x++;
+                if (this.blocked(board, x, y)) {
+                    this.x -= direction;
                     return false;
-                }
-            }
-        }
-
-        for (var y = 0; y < this.height; y++) {
-            for (var x = 0; x < this.width; x++) {
-                if (!board.bounded(this.x + x, this.y + y)) {
-                    if (this.shape[this.rotation][y][x] !== 0) {
-                        this.x++;
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    moveRight(board) {
-        if (this.stuck) {
-            return false;
-        }
-        this.x++;
-        for (var y = 0; y < this.height; y++) {
-            for (var x = 0; x < this.width; x++) {
-                if (board.get(this.x + x, this.y + y) !== 0 && this.shape[this.rotation][y][x] !== 0) {
-                    this.x--;
-                    return false;
-                }
-            }
-        }
-
-        for (var y = 0; y < this.height; y++) {
-            for (var x = 0; x < this.width; x++) {
-                if (!board.bounded(this.x + x, this.y + y)) {
-                    if (this.shape[this.rotation][y][x] !== 0) {
-                        this.x--;
-                        return false;
-                    }
                 }
             }
         }
