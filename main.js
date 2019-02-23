@@ -268,7 +268,7 @@ window.onload = function() {
     canvas = new Canvas('canvas', 200, 400);
     context = canvas.getContext();
 
-    nextCanvas = new Canvas('next', 80, 80);
+    nextCanvas = new Canvas('next', 120, 80);
 
     context.fillStyle = colors[0];
     context.fillRect(0, 0, canvas.width, canvas.height);
@@ -293,7 +293,7 @@ function drawNext(c, ctx, p) {
     for (var y = 0; y < p.height; y++) {
         for (var x = 0; x < p.width; x++) {
             if (p.shape[p.rotation][y][x] !== 0) {
-                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                ctx.fillRect((x + 1) * cellSize, (y) * cellSize, cellSize - 1, cellSize - 1);
             }
         }
     }
@@ -416,7 +416,7 @@ function drawPiece(ctx, board, piece) {
     for (var y = 0; y < piece.height; y++) {
         for (var x = 0; x < piece.width; x++) {
             if (piece.shape[piece.rotation][y][x] !== 0) {
-                ctx.fillRect((piece.x + x) * cellSize, (piece.y - 20 + y) * cellSize, cellSize, cellSize);
+                ctx.fillRect((piece.x + x) * cellSize, (piece.y - 20 + y) * cellSize, cellSize - 1, cellSize - 1);
             }
         }
     }
@@ -550,7 +550,7 @@ function drawGrid(ctx) {
         for (var y = 0; y < grid.height - 20; y++) {
             for (var x = 0; x < grid.width; x++) {
                 if (grid.get(x, y + 20) === i) {
-                    ctx.fillRect(x * ps, y * ps, ps, ps);
+                    ctx.fillRect(x * ps, y * ps, ps - 1, ps - 1);
                 }
             }
         }
