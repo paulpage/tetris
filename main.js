@@ -1,3 +1,5 @@
+var canvas;
+var context;
 var grid;
 var piece;
 var lost = false;
@@ -26,43 +28,6 @@ var colors = [
     'purple',
     'red'
 ]
-
-class Canvas {
-    constructor(id, width, height) {
-        this.externalCanvas = document.getElementById(id);
-        this.externalContext = this.externalCanvas.getContext('2d');
-        this.externalCanvas.width = width;
-        this.externalCanvas.height = height;
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.context = this.canvas.getContext('2d');
-
-        this.width = width;
-        this.height = height;
-    }
-
-    getCanvas() {
-        return this.canvas;
-    }
-
-    getContext() {
-        return this.context;
-    }
-
-    draw() {
-        this.externalContext.drawImage(this.canvas, 0, 0);
-    }
-
-    setSize(width, height) {
-        this.width = width;
-        this.height = height;
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.externalCanvas.width = width;
-        this.externalCanvas.height = height;
-    }
-}
 
 var GameState = Object.freeze({
     menu: 0,
@@ -299,17 +264,18 @@ window.onload = function() {
     scoreDom = document.getElementById('score');
     levelDom = document.getElementById('level');
     linesDom = document.getElementById('lines');
-    canvas.init();
-    canvas.setSize(200, 400);
+
+    canvas = new Canvas('canvas', 200, 400);
+    context = canvas.getContext();
 
     nextCanvas = new Canvas('next', 80, 80);
 
-    canvas.ctx.fillStyle = colors[0];
-    canvas.ctx.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = colors[0];
+    context.fillRect(0, 0, canvas.width, canvas.height);
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    canvas.c.addEventListener('mousedown', handleClick);
+    canvas.getCanvas().addEventListener('mousedown', handleClick);
 
     newGame();
     updateScore(score);
@@ -364,15 +330,15 @@ function drawMenu(c, ctx) {
 
 function update() {
 
+    canvas.draw();
     switch (gameState) {
         case GameState.menu:
-            drawMenu(canvas, canvas.ctx);
+            drawMenu(canvas, context);
             break;
         case GameState.playing:
-            canvas.draw();
 
-            drawGrid(canvas.ctx);
-            drawPiece(canvas.ctx, grid, piece);
+            drawGrid(context);
+            drawPiece(context, grid, piece);
             drawNext(nextCanvas, nextCanvas.getContext(), nextPiece);
 
             if (downPressed) {
@@ -428,10 +394,13 @@ function update() {
                             break;
                         case 2:
                             score += 100 * (level + 1);
+                            break;
                         case 3:
                             score += 300 * (level + 1);
+                            break;
                         case 4:
                             score += 1200 * (level + 1);
+                            break;
                     }
                     updateScore(score);
                 }
