@@ -19,14 +19,14 @@ var levelDom;
 var linesDom;
 
 var colors = [
-    'black',
-    'cyan',
-    'yellow',
-    'blue',
-    'orange',
-    'green',
-    'purple',
-    'red'
+    '#000000', // black
+    '#00cbc9', // cyan
+    '#f9cd00', // yellow
+    '#0052e9', // blue
+    '#f98100', // orange
+    '#00b80d', // green
+    '#9a00f2', // purple
+    '#ec2e08'  // red
 ]
 
 var GameState = Object.freeze({
@@ -544,18 +544,6 @@ function drawGrid(ctx) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     var ps = canvas.width / grid.width;
-
-    ctx.strokeStyle = 'grey';
-    ctx.beginPath();
-    for (var x = 0; x < grid.width; x++) {
-        ctx.moveTo(x * ps, 0);
-        ctx.lineTo(x * ps, canvas.height);
-    }
-    for (var y = 0; y < grid.height; y++) {
-        ctx.moveTo(0, y * ps);
-        ctx.lineTo(canvas.width, y * ps);
-    }
-    ctx.stroke();
 
     for (var i = 1; i < colors.length; i++) {
         ctx.fillStyle = colors[i];
