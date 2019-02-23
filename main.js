@@ -469,10 +469,10 @@ function handleKeyDown(e) {
                 downLock = true;
             }
             break;
-        case 'a':
+        case 'x':
             piece.rotate(grid, 1);
             break;
-        case 's':
+        case 'z':
             piece.rotate(grid, -1);
             break;
     }
