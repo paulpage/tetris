@@ -1,13 +1,8 @@
-var grid;
-var piece;
 var frame = 0;
-var score = 0;
-var level = 0;
 var downPressed = false;
 var downLock = false;
 var downScore = 0;
-var totalLinesCleared = 0;
-var nextPiece;
+var game;
 
 var nextCanvas;
 var canvas;
@@ -43,13 +38,6 @@ var GameState = Object.freeze({
 
 var gameState = GameState.menu;
 
-var gravities = [
-    48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 
-    5,  5,  5,  4,  4,  4,  3,  3,  3, 2,
-    2,  2,  2,  2,  2,  2,  2,  2,  2, 1
-]
-
-
 function updateScore(value) {
     scoreDom.innerHTML = value;
 }
@@ -78,10 +66,10 @@ window.onload = function() {
     window.addEventListener('keyup', handleKeyUp);
     canvas.getCanvas().addEventListener('mousedown', handleClick);
 
-    newGame();
-    updateScore(score);
-    updateLevel(level);
-    updateLines(totalLinesCleared);
+    game = new Game(0);
+    updateScore(game.score);
+    updateLevel(game.level);
+    updateLines(game.linesCleared);
 
     window.requestAnimationFrame(update)
 }
@@ -103,23 +91,9 @@ function drawNext(c, ctx, p) {
 
 function handleClick() {
     if (gameState === GameState.menu) {
-        newGame();
+        game = new Game(0);
         gameState = GameState.playing;
     }
-}
-
-function newGame() {
-    score = 0;
-    level = 0;
-    totalLinesCleared = 0;
-    grid = new Board(10, 40);
-    piece = randomPiece();
-    nextPiece = randomPiece();
-}
-
-function randomPiece() {
-    var i = Math.floor(Math.random() * 7);
-    return new Piece(5, 18, shapes[i], colors[i + 1]);
 }
 
 function drawMenu(c, ctx) {
@@ -139,29 +113,29 @@ function update() {
         case GameState.playing:
 
             drawGrid(context);
-            drawPiece(context, grid, piece);
-            drawNext(nextCanvas, nextCanvas.getContext(), nextPiece);
+            drawPiece(context, game.board, game.piece);
+            drawNext(nextCanvas, nextCanvas.getContext(), game.nextPiece);
 
             if (downPressed) {
                 if (downScore < 20) {
-                    score++;
+                    game.score++;
                     downScore++;
                 }
-                updateScore(score);
+                updateScore(game.score);
                 frame = (frame + 1) % 2;
             } else {
-                frame = (frame + 1) % gravities[Math.min(level, 29)];
+                frame = (frame + 1) % game.gravities[Math.min(game.level, 29)];
             }
 
             if (frame === 0) {
                 var linesCleared = 0;
-                var state = piece.update(grid);
+                var state = game.piece.update(game.board);
                 switch (state) {
                     case PieceResult.free:
                         break;
                     case PieceResult.placed:
-                        piece = nextPiece;
-                        nextPiece = randomPiece();
+                        game.piece = game.nextPiece;
+                        game.nextPiece = game.randomPiece();
                         downPressed = false;
                         downScore = 0;
                         break;
@@ -170,30 +144,30 @@ function update() {
                         break;
                 }
 
-                for (var y = 0; y < grid.height; y++) {
-                    var row = grid.getRow(y);
+                for (var y = 0; y < game.board.height; y++) {
+                    var row = game.board.getRow(y);
                     var clear = true;
-                    for (var x = 0; x < grid.width; x++) {
+                    for (var x = 0; x < game.board.width; x++) {
                         if (row[x] === 0) {
                             clear = false;
                         }
                     }
                     if (clear) {
-                        grid.clear(y);
+                        game.board.clear(y);
                         linesCleared++;
-                        totalLinesCleared++;
-                        updateLines(totalLinesCleared);
-                        if (totalLinesCleared % 10 === 0) {
-                            level++;
-                            updateLevel(level);
+                        game.linesCleared++;
+                        updateLines(game.linesCleared);
+                        if (game.linesCleared % 10 === 0) {
+                            game.level++;
+                            updateLevel(game.level);
                         }
                     }
                 }
 
                 if (linesCleared > 0) {
                     var scoreMultipliers = [40, 100, 300, 1200];
-                    score += scoreMultipliers[linesCleared - 1] * (level + 1);
-                    updateScore(score);
+                    game.score += scoreMultipliers[linesCleared - 1] * (game.level + 1);
+                    updateScore(game.score);
                 }
             }
             break;
@@ -202,7 +176,7 @@ function update() {
 }
 
 function drawPiece(ctx, board, piece) {
-    var cellSize = canvas.width / grid.width;
+    var cellSize = canvas.width / board.width;
     ctx.fillStyle = piece.color;
     for (var y = 0; y < piece.height; y++) {
         for (var x = 0; x < piece.width; x++) {
@@ -216,10 +190,10 @@ function drawPiece(ctx, board, piece) {
 function handleKeyDown(e) {
     switch (keyboard.getChar(e)) {
         case keyConfig.left:
-            piece.move(grid, -1);
+            game.piece.move(game.board, -1);
             break;
         case keyConfig.right:
-            piece.move(grid, 1);
+            game.piece.move(game.board, 1);
             break;
         case keyConfig.up:
             break;
@@ -230,10 +204,10 @@ function handleKeyDown(e) {
             }
             break;
         case keyConfig.rotateClockwise:
-            piece.rotate(grid, 1);
+            game.piece.rotate(game.board, 1);
             break;
         case keyConfig.rotateCounterclockwise:
-            piece.rotate(grid, -1);
+            game.piece.rotate(game.board, -1);
             break;
     }
 }
@@ -250,13 +224,13 @@ function drawGrid(ctx) {
     ctx.fillStyle = colors[0];
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    var ps = canvas.width / grid.width;
+    var ps = canvas.width / game.board.width;
 
     for (var i = 1; i < colors.length; i++) {
         ctx.fillStyle = colors[i];
-        for (var y = 0; y < grid.height - 20; y++) {
-            for (var x = 0; x < grid.width; x++) {
-                if (grid.get(x, y + 20) === i) {
+        for (var y = 0; y < game.board.height - 20; y++) {
+            for (var x = 0; x < game.board.width; x++) {
+                if (game.board.get(x, y + 20) === i) {
                     ctx.fillRect(x * ps, y * ps, ps - 1, ps - 1);
                 }
             }

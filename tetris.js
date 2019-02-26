@@ -2,9 +2,10 @@ class Game {
     constructor(level) {
         this.score = 0;
         this.level = level;
-        this.grid = new Board(10, 40);
+        this.board = new Board(10, 40);
         this.nextPiece = this.randomPiece();
         this.piece = this.randomPiece();
+        this.linesCleared = 0;
         
         this.gravities = [
             48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 
@@ -15,7 +16,7 @@ class Game {
     
     randomPiece() {
         var i = Math.floor(Math.random() * 7);
-        return new Piece(5, 20, shapes[i], colors[i + 1]);
+        return new Piece(5, 19, shapes[i], colors[i + 1]);
     }
 } 
 
