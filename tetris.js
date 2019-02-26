@@ -1,3 +1,23 @@
+class Game {
+    constructor(level) {
+        this.score = 0;
+        this.level = level;
+        this.grid = new Board(10, 40);
+        this.nextPiece = this.randomPiece();
+        this.piece = this.randomPiece();
+        
+        this.gravities = [
+            48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 
+            5,  5,  5,  4,  4,  4,  3,  3,  3, 2,
+            2,  2,  2,  2,  2,  2,  2,  2,  2, 1
+        ];
+    }
+    
+    randomPiece() {
+        var i = Math.floor(Math.random() * 7);
+        return new Piece(5, 20, shapes[i], colors[i + 1]);
+    }
+} 
 
 var PieceResult = Object.freeze({
     free: 0,

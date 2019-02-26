@@ -1,22 +1,29 @@
-var canvas;
-var context;
 var grid;
 var piece;
-var lost = false;
 var frame = 0;
 var score = 0;
 var level = 0;
-var gravity = 48;
 var downPressed = false;
 var downLock = false;
 var downScore = 0;
 var totalLinesCleared = 0;
 var nextPiece;
-var nextCanvas;
 
+var nextCanvas;
+var canvas;
+var context;
 var scoreDom;
 var levelDom;
 var linesDom;
+
+var keyConfig = Object.freeze({
+    left: 'left',
+    right: 'right',
+    up: 'up',
+    down: 'down',
+    rotateClockwise: 'c',
+    rotateCounterclockwise: 'x'
+});
 
 var colors = [
     '#000000', // black
@@ -66,8 +73,6 @@ window.onload = function() {
 
     nextCanvas = new Canvas('next', 120, 80);
 
-    context.fillStyle = colors[0];
-    context.fillRect(0, 0, canvas.width, canvas.height);
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -164,6 +169,7 @@ function update() {
                         gameState = GameState.menu;
                         break;
                 }
+
                 for (var y = 0; y < grid.height; y++) {
                     var row = grid.getRow(y);
                     var clear = true;
@@ -183,21 +189,10 @@ function update() {
                         }
                     }
                 }
+
                 if (linesCleared > 0) {
-                    switch (linesCleared) {
-                        case 1:
-                            score += 40 * (level + 1);
-                            break;
-                        case 2:
-                            score += 100 * (level + 1);
-                            break;
-                        case 3:
-                            score += 300 * (level + 1);
-                            break;
-                        case 4:
-                            score += 1200 * (level + 1);
-                            break;
-                    }
+                    var scoreMultipliers = [40, 100, 300, 1200];
+                    score += scoreMultipliers[linesCleared - 1] * (level + 1);
                     updateScore(score);
                 }
             }
@@ -220,24 +215,24 @@ function drawPiece(ctx, board, piece) {
 
 function handleKeyDown(e) {
     switch (keyboard.getChar(e)) {
-        case 'left':
+        case keyConfig.left:
             piece.move(grid, -1);
             break;
-        case 'right':
+        case keyConfig.right:
             piece.move(grid, 1);
             break;
-        case 'up':
+        case keyConfig.up:
             break;
-        case 'down':
+        case keyConfig.down:
             if (!downLock) {
                 downPressed = true;
                 downLock = true;
             }
             break;
-        case 'x':
+        case keyConfig.rotateClockwise:
             piece.rotate(grid, 1);
             break;
-        case 'z':
+        case keyConfig.rotateCounterclockwise:
             piece.rotate(grid, -1);
             break;
     }
@@ -245,7 +240,7 @@ function handleKeyDown(e) {
 
 function handleKeyUp(e) {
     switch (keyboard.getChar(e)) {
-        case 'down':
+        case keyConfig.down:
             downPressed = false;
             downLock = false;
     }
